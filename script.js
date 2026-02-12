@@ -90,6 +90,8 @@ function placeButton(btn, x, y) {
   const nx = Math.min(Math.max(x, padding), maxX);
   const ny = Math.min(Math.max(y, padding), maxY);
 
+  btn.style.zIndex = btn.style.zIndex || "9999";
+
   if (isForbidden(nx, ny, rect)) {
     teleportButton(btn);
     return;
@@ -98,7 +100,6 @@ function placeButton(btn, x, y) {
   btn.style.position = "fixed";
   btn.style.left = `${nx}px`;
   btn.style.top = `${ny}px`;
-  btn.style.zIndex = "9999";
 }
 
 function teleportButton(btn) {
