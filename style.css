@@ -148,6 +148,12 @@ p {
   flex-wrap: wrap;
 }
 
+.no.clone {
+  opacity: 0.92;
+  transform-origin: center;
+  backdrop-filter: blur(8px);
+}
+
 /* Confetti hearts */
 #confetti {
   position: absolute;
