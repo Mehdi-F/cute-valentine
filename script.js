@@ -105,24 +105,58 @@ function teleportButton(btn) {
   const padding = 12;
   const rect = btn.getBoundingClientRect();
 
+  // screen bounds
+  const minX = padding;
+  const minY = padding;
   const maxX = window.innerWidth - rect.width - padding;
   const maxY = window.innerHeight - rect.height - padding;
 
-  for (let i = 0; i < 40; i++) {
-    const x = padding + Math.random() * (maxX - padding);
-    const y = padding + Math.random() * (maxY - padding);
+  // If the button can't fit, just pin it to top-left safely
+  if (maxX < minX || maxY < minY) {
+    btn.style.position = "fixed";
+    btn.style.left = `${minX}px`;
+    btn.style.top = `${minY}px`;
+    btn.style.zIndex = "9999";
+    return;
+  }
+
+  const fr = getForbiddenRects()[0];
+
+  // Define 4 "safe zones" around the forbidden rect
+  const zones = [
+    // Top zone
+    { x1: minX, x2: maxX, y1: minY, y2: Math.min(maxY, fr.top - rect.height - padding) },
+    // Bottom zone
+    { x1: minX, x2: maxX, y1: Math.max(minY, fr.bottom + padding), y2: maxY },
+    // Left zone
+    { x1: minX, x2: Math.min(maxX, fr.left - rect.width - padding), y1: minY, y2: maxY },
+    // Right zone
+    { x1: Math.max(minX, fr.right + padding), x2: maxX, y1: minY, y2: maxY },
+  ].filter(z => z.x2 >= z.x1 && z.y2 >= z.y1);
+
+  const pickFrom = zones.length ? zones : [{ x1: minX, x2: maxX, y1: minY, y2: maxY }];
+
+  for (let i = 0; i < 20; i++) {
+    const z = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+    const x = z.x1 + Math.random() * (z.x2 - z.x1);
+    const y = z.y1 + Math.random() * (z.y2 - z.y1);
 
     if (!isForbidden(x, y, rect)) {
       btn.style.position = "fixed";
       btn.style.left = `${x}px`;
       btn.style.top = `${y}px`;
-      btn.style.zIndex = "9999";
+      btn.style.zIndex = btn.style.zIndex || "9999";
       return;
     }
   }
 
-  placeButton(btn, padding, padding);
+  // Last resort: corner
+  btn.style.position = "fixed";
+  btn.style.left = `${minX}px`;
+  btn.style.top = `${minY}px`;
+  btn.style.zIndex = btn.style.zIndex || "9999";
 }
+
 
 
 function updateTrolling() {
