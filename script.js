@@ -29,13 +29,13 @@ function clamp(n, min, max) {
 
 function placeNoButton(x, y) {
   const rect = noBtn.getBoundingClientRect();
-  const padding = 12;
+  const padding = 16;
 
   const maxX = window.innerWidth - rect.width - padding;
   const maxY = window.innerHeight - rect.height - padding;
 
-  const nx = clamp(x, padding, maxX);
-  const ny = clamp(y, padding, maxY);
+  const nx = Math.min(Math.max(x, padding), maxX);
+  const ny = Math.min(Math.max(y, padding), maxY);
 
   noBtn.style.position = "fixed";
   noBtn.style.left = `${nx}px`;
