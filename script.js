@@ -30,6 +30,52 @@ const trollLines = [
   "Fine. Try harder 😈",
 ];
 
+let released = false;
+
+const card = document.getElementById("card");
+
+function expandRect(r, m) {
+  return {
+    left: r.left - m,
+    top: r.top - m,
+    right: r.right + m,
+    bottom: r.bottom + m,
+    width: r.width + m * 2,
+    height: r.height + m * 2,
+  };
+}
+
+function rectsOverlap(a, b) {
+  return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+}
+
+function getForbiddenRects() {
+  const r = card.getBoundingClientRect();
+  return [expandRect(r, 18)];
+}
+
+function isForbidden(x, y, btnRect) {
+  const candidate = {
+    left: x,
+    top: y,
+    right: x + btnRect.width,
+    bottom: y + btnRect.height,
+  };
+  return getForbiddenRects().some((fr) => rectsOverlap(candidate, fr));
+}
+
+function releaseNoButton() {
+  if (released) return;
+  released = true;
+
+  const r = noBtn.getBoundingClientRect();
+  noBtn.style.position = "fixed";
+  noBtn.style.left = `${r.left}px`;
+  noBtn.style.top = `${r.top}px`;
+  noBtn.style.zIndex = "9999";
+}
+
+
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
@@ -44,20 +90,40 @@ function placeButton(btn, x, y) {
   const nx = Math.min(Math.max(x, padding), maxX);
   const ny = Math.min(Math.max(y, padding), maxY);
 
+  if (isForbidden(nx, ny, rect)) {
+    teleportButton(btn);
+    return;
+  }
+  
   btn.style.position = "fixed";
   btn.style.left = `${nx}px`;
   btn.style.top = `${ny}px`;
+  btn.style.zIndex = "9999";
 }
 
 function teleportButton(btn) {
   const padding = 12;
   const rect = btn.getBoundingClientRect();
 
-  const x = padding + Math.random() * (window.innerWidth - rect.width - padding * 2);
-  const y = padding + Math.random() * (window.innerHeight - rect.height - padding * 2);
+  const maxX = window.innerWidth - rect.width - padding;
+  const maxY = window.innerHeight - rect.height - padding;
 
-  placeButton(btn, x, y);
+  for (let i = 0; i < 40; i++) {
+    const x = padding + Math.random() * (maxX - padding);
+    const y = padding + Math.random() * (maxY - padding);
+
+    if (!isForbidden(x, y, rect)) {
+      btn.style.position = "fixed";
+      btn.style.left = `${x}px`;
+      btn.style.top = `${y}px`;
+      btn.style.zIndex = "9999";
+      return;
+    }
+  }
+
+  placeButton(btn, padding, padding);
 }
+
 
 function updateTrolling() {
   dodgeLevel = Math.min(dodgeLevel + 1, trollLines.length - 1);
@@ -67,7 +133,6 @@ function updateTrolling() {
 
 /** (2) Progressive pressure: Yes grows each dodge */
 function updateYesPressure() {
-  // Growth ramps up gently, capped so it doesn't become absurd
   const target = clamp(1 + dodges * 0.06, 1, 1.65);
   yesScale = target;
   yesBtn.style.transform = `scale(${yesScale})`;
@@ -82,11 +147,12 @@ function activateSwarm() {
   subtitle.textContent = "Oh you like NO? Here's MORE NO. 😈";
   spawnHearts(20);
 
-  const count = 6; // number of fake buttons
+  const count = 6;
   for (let i = 0; i < count; i++) {
     const clone = noBtn.cloneNode(true);
     clone.classList.add("clone");
     clone.removeAttribute("id");
+    clone.style.zIndex = "9998";
 
     // Slightly different label sometimes
     const labels = ["No 🙃", "Nope 😭", "Nah 😈", "Not today 🧍", "NO ❌", "??? 🤨"];
@@ -95,7 +161,6 @@ function activateSwarm() {
     document.body.appendChild(clone);
     clones.push(clone);
 
-    // Put them around randomly
     requestAnimationFrame(() => teleportButton(clone));
 
     // Make clones dodge too
@@ -131,14 +196,17 @@ function cleanupSwarm() {
 /** Main dodge for original No button */
 function dodge(pointerX, pointerY) {
   dodges += 1;
+
+  releaseNoButton();
+
   updateTrolling();
   updateYesPressure();
 
-  // Turn on swarm after a few attempts
   if (dodges === 5) activateSwarm();
 
   dodgeButton(noBtn, pointerX, pointerY, false);
 }
+
 
 /** Generic dodge for any button (real No or clone) */
 function dodgeButton(btn, pointerX, pointerY, isClone) {
@@ -193,8 +261,6 @@ function winScreen() {
   title.textContent = "W decision 😌💖";
   subtitle.textContent = "Screenshot this. It’s legally binding.";
   spawnHearts(90);
-
-  // optional: clean up swarm so it doesn't hang around behind overlay
   cleanupSwarm();
 }
 
