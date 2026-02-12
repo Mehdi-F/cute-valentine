@@ -141,14 +141,11 @@ shareBtn.addEventListener("click", async () => {
   }
 });
 
-// Start with No inside the card area (then it escapes later)
 window.addEventListener("load", () => {
-  subtitle.textContent = trollLines[0];
+  teleportNoButton();
 });
 
-// Keep No visible on resize
 window.addEventListener("resize", () => {
-  // If we've already moved it to fixed coords, bring it back in bounds
   if (noBtn.style.position === "fixed") {
     teleportNoButton();
   }
