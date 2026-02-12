@@ -235,7 +235,7 @@ shareBtn.addEventListener("click", async () => {
 });
 
 window.addEventListener("load", () => {
-  teleportButton(noBtn);
+  subtitle.textContent = trollLines[0];
 });
 
 window.addEventListener("resize", () => {
