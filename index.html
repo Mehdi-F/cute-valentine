@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Important Question 💘</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="card" id="card">
+        <div class="badge">⚠️ Very serious</div>
+
+        <h1 id="title">Will you be my Valentine? 💘</h1>
+        <p id="subtitle">Choose wisely. There are… consequences.</p>
+
+        <div class="buttons">
+          <button id="yesBtn" class="btn yes">Yes 💖</button>
+
+          <button id="noBtn" class="btn no" aria-label="No">No 🙃</button>
+        </div>
+
+        <p class="hint" id="hint">Tip: “No” is a suspicious choice.</p>
+      </div>
+
+      <div class="win hidden" id="win">
+        <div class="card win-card">
+          <div class="badge">✅ Correct</div>
+          <h1>Yessss! 🎉💖</h1>
+          <p>
+            Congratulations. You made the only acceptable decision.
+            <br />
+            <span class="small">I knew you were smart 😌</span>
+          </p>
+
+          <div class="actions">
+            <button id="shareBtn" class="btn yes">Copy cute message</button>
+            <a class="btn ghost" href="./index.html">Do it again 😈</a>
+          </div>
+
+          <p class="tiny" id="copied"></p>
+        </div>
+      </div>
+
+      <div id="confetti" aria-hidden="true"></div>
+    </main>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
