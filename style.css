@@ -1,0 +1,170 @@
+:root {
+  --bg1: #0b1020;
+  --bg2: #1a0b1e;
+  --card: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.14);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.72);
+  --yes: #ff4d8d;
+  --yes2: #ff77a8;
+  --no: rgba(255, 255, 255, 0.12);
+  --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 20% 20%, #2d0b2a 0%, transparent 55%),
+              radial-gradient(1200px 800px at 80% 30%, #0b2d2a 0%, transparent 55%),
+              linear-gradient(135deg, var(--bg1), var(--bg2));
+  overflow: hidden;
+}
+
+.wrap {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  position: relative;
+}
+
+.card {
+  width: min(560px, 92vw);
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 22px 22px 18px;
+  backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+h1 {
+  margin: 14px 0 6px;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.05;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.buttons {
+  margin-top: 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 68px;
+}
+
+.btn {
+  border: 0;
+  cursor: pointer;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-weight: 800;
+  font-size: 16px;
+  transition: transform 0.12s ease, filter 0.12s ease, opacity 0.12s ease;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn.yes {
+  background: linear-gradient(135deg, var(--yes), var(--yes2));
+  color: #15020a;
+  box-shadow: 0 12px 30px rgba(255, 77, 141, 0.25);
+}
+
+.btn.no {
+  background: var(--no);
+  color: var(--text);
+  border: 1px solid var(--stroke);
+  position: relative;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--stroke);
+  text-decoration: none;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hint {
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.win {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(6px);
+}
+
+.hidden { display: none; }
+
+.win-card {
+  text-align: center;
+}
+
+.small { opacity: 0.9; font-weight: 700; }
+.tiny { margin-top: 10px; font-size: 12px; opacity: 0.9; }
+
+.actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Confetti hearts */
+#confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.heart {
+  position: absolute;
+  font-size: 18px;
+  animation: fall linear forwards;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.3));
+  opacity: 0.95;
+}
+
+@keyframes fall {
+  from { transform: translateY(-10vh) rotate(0deg); }
+  to   { transform: translateY(110vh) rotate(360deg); }
+}
