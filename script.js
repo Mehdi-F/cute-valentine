@@ -57,23 +57,32 @@ function getReachableAnchors(btnRect) {
 
   const fr = getCardRectExpanded(18);
 
+  const gap = 14;
+  const mobileExtraUp = 36;
+  const isMobile = vp.width <= 520;
+
+  const bottomY = isMobile
+    ? fr.bottom + gap - mobileExtraUp
+    : fr.bottom + gap;
+
+  const topY = fr.top - btnRect.height - gap;
+
   const raw = [
-    // top row around the card
-    { x: fr.left, y: fr.top - btnRect.height - 22 },
-    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: fr.top - btnRect.height - 22 },
-    { x: fr.right - btnRect.width, y: fr.top - btnRect.height - 22 },
+    // Top anchors
+    { x: fr.left, y: topY },
+    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: topY },
+    { x: fr.right - btnRect.width, y: topY },
 
-    // sides
-    { x: fr.left - btnRect.width - 22, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
-    { x: fr.right + 22, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
+    // Side anchors (mid)
+    { x: fr.left - btnRect.width - gap, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
+    { x: fr.right + gap, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
 
-    // bottom row around the card
-    { x: fr.left, y: fr.bottom + 22 },
-    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: fr.bottom + 22 },
-    { x: fr.right - btnRect.width, y: fr.bottom + 22 },
+    // Bottom anchors (pulled up on mobile)
+    { x: fr.left, y: bottomY },
+    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: bottomY },
+    { x: fr.right - btnRect.width, y: bottomY },
   ];
 
-  // Clamp + remove forbidden ones
   const anchors = raw
     .map(p => ({
       x: clamp(p.x, minX, maxX),
@@ -81,17 +90,30 @@ function getReachableAnchors(btnRect) {
     }))
     .filter(p => !isForbidden(p.x, p.y, btnRect));
 
-  // Fallback: if everything is forbidden (tiny screen), allow viewport corners
   if (!anchors.length) {
-    return [
-      { x: minX, y: minY },
-      { x: maxX, y: minY },
-      { x: minX, y: maxY },
-      { x: maxX, y: maxY },
-    ];
+    const cx = clamp((fr.left + fr.right) / 2 - btnRect.width / 2, minX, maxX);
+    const cy = clamp((fr.top + fr.bottom) / 2 - btnRect.height / 2, minY, maxY);
+    const radius = isMobile ? 110 : 160;
+
+    const ring = [];
+    for (let i = 0; i < 8; i++) {
+      const ang = (Math.PI * 2 * i) / 8;
+      const x = clamp(cx + Math.cos(ang) * radius, minX, maxX);
+      const y = clamp(cy + Math.sin(ang) * radius, minY, maxY);
+      if (!isForbidden(x, y, btnRect)) ring.push({ x, y });
+    }
+    if (ring.length) return ring;
   }
 
-  return anchors;
+  // Final fallback: viewport corners
+  return anchors.length
+    ? anchors
+    : [
+        { x: minX, y: minY },
+        { x: maxX, y: minY },
+        { x: minX, y: maxY },
+        { x: maxX, y: maxY },
+      ];
 }
 
 function getViewport() {
@@ -157,8 +179,28 @@ function teleportButtonReachable(btn) {
   const rect = btn.getBoundingClientRect();
   const anchors = getReachableAnchors(rect);
 
-  // Cycle deterministically so the user can keep finding it
-  const idx = (dodges - 1) % anchors.length;
+  const vp = getViewport();
+  const safeBottom = vp.top + vp.height - rect.height - 22;
+
+  // Deterministic index
+  let idx = (dodges - 1) % anchors.length;
+
+  if (anchors[idx].y > safeBottom) {
+    let best = idx;
+    let bestScore = Infinity;
+    for (let i = 0; i < anchors.length; i++) {
+      const a = anchors[i];
+      if (a.y <= safeBottom) {
+        const score = Math.abs(i - idx);
+        if (score < bestScore) {
+          bestScore = score;
+          best = i;
+        }
+      }
+    }
+    idx = best;
+  }
+
   const { x, y } = anchors[idx];
 
   btn.style.position = "fixed";
@@ -166,6 +208,7 @@ function teleportButtonReachable(btn) {
   btn.style.top = `${y}px`;
   btn.style.zIndex = btn.style.zIndex || "9999";
 }
+
 
 
 function placeButton(btn, x, y) {
