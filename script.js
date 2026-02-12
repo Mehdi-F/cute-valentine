@@ -34,6 +34,19 @@ let released = false;
 
 const card = document.getElementById("card");
 
+function getViewport() {
+  const vv = window.visualViewport;
+  if (vv) {
+    return {
+      left: vv.offsetLeft,
+      top: vv.offsetTop,
+      width: vv.width,
+      height: vv.height,
+    };
+  }
+  return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+}
+
 function expandRect(r, m) {
   return {
     left: r.left - m,
@@ -84,11 +97,23 @@ function placeButton(btn, x, y) {
   const rect = btn.getBoundingClientRect();
   const padding = 16;
 
-  const maxX = window.innerWidth - rect.width - padding;
-  const maxY = window.innerHeight - rect.height - padding;
+  const vp = getViewport();
 
-  const nx = Math.min(Math.max(x, padding), maxX);
-  const ny = Math.min(Math.max(y, padding), maxY);
+  const minX = vp.left + padding;
+  const minY = vp.top + padding;
+  const maxX = vp.left + vp.width - rect.width - padding;
+  const maxY = vp.top + vp.height - rect.height - padding;
+
+  if (maxX < minX || maxY < minY) {
+    btn.style.position = "fixed";
+    btn.style.left = `${minX}px`;
+    btn.style.top = `${minY}px`;
+    btn.style.zIndex = btn.style.zIndex || "9999";
+    return;
+  }
+
+  let nx = clamp(x, minX, maxX);
+  let ny = clamp(y, minY, maxY);
 
   btn.style.zIndex = btn.style.zIndex || "9999";
 
@@ -96,51 +121,35 @@ function placeButton(btn, x, y) {
     teleportButton(btn);
     return;
   }
-  
+
   btn.style.position = "fixed";
   btn.style.left = `${nx}px`;
   btn.style.top = `${ny}px`;
 }
 
 function teleportButton(btn) {
-  const padding = 12;
   const rect = btn.getBoundingClientRect();
+  const padding = 12;
 
-  // screen bounds
-  const minX = padding;
-  const minY = padding;
-  const maxX = window.innerWidth - rect.width - padding;
-  const maxY = window.innerHeight - rect.height - padding;
+  const vp = getViewport();
 
-  // If the button can't fit, just pin it to top-left safely
+  const minX = vp.left + padding;
+  const minY = vp.top + padding;
+  const maxX = vp.left + vp.width - rect.width - padding;
+  const maxY = vp.top + vp.height - rect.height - padding;
+
   if (maxX < minX || maxY < minY) {
     btn.style.position = "fixed";
     btn.style.left = `${minX}px`;
     btn.style.top = `${minY}px`;
-    btn.style.zIndex = "9999";
+    btn.style.zIndex = btn.style.zIndex || "9999";
     return;
   }
 
-  const fr = getForbiddenRects()[0];
-
-  // Define 4 "safe zones" around the forbidden rect
-  const zones = [
-    // Top zone
-    { x1: minX, x2: maxX, y1: minY, y2: Math.min(maxY, fr.top - rect.height - padding) },
-    // Bottom zone
-    { x1: minX, x2: maxX, y1: Math.max(minY, fr.bottom + padding), y2: maxY },
-    // Left zone
-    { x1: minX, x2: Math.min(maxX, fr.left - rect.width - padding), y1: minY, y2: maxY },
-    // Right zone
-    { x1: Math.max(minX, fr.right + padding), x2: maxX, y1: minY, y2: maxY },
-  ].filter(z => z.x2 >= z.x1 && z.y2 >= z.y1);
-
-  const pickFrom = zones.length ? zones : [{ x1: minX, x2: maxX, y1: minY, y2: maxY }];
-
-  for (let i = 0; i < 20; i++) {
-    const z = pickFrom[Math.floor(Math.random() * pickFrom.length)];
-    const x = z.x1 + Math.random() * (z.x2 - z.x1);
-    const y = z.y1 + Math.random() * (z.y2 - z.y1);
+  // Try a bunch of spots inside the *visible* viewport
+  for (let i = 0; i < 40; i++) {
+    const x = minX + Math.random() * (maxX - minX);
+    const y = minY + Math.random() * (maxY - minY);
 
     if (!isForbidden(x, y, rect)) {
       btn.style.position = "fixed";
@@ -151,14 +160,12 @@ function teleportButton(btn) {
     }
   }
 
-  // Last resort: corner
+  // Fallback
   btn.style.position = "fixed";
   btn.style.left = `${minX}px`;
   btn.style.top = `${minY}px`;
   btn.style.zIndex = btn.style.zIndex || "9999";
 }
-
-
 
 function updateTrolling() {
   dodgeLevel = Math.min(dodgeLevel + 1, trollLines.length - 1);
