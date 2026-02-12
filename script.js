@@ -34,6 +34,66 @@ let released = false;
 
 const card = document.getElementById("card");
 
+function getCardRectExpanded(m = 18) {
+  const r = card.getBoundingClientRect();
+  return {
+    left: r.left - m,
+    top: r.top - m,
+    right: r.right + m,
+    bottom: r.bottom + m,
+    width: r.width + m * 2,
+    height: r.height + m * 2,
+  };
+}
+
+function getReachableAnchors(btnRect) {
+  const vp = getViewport();
+  const padding = 16;
+
+  const minX = vp.left + padding;
+  const minY = vp.top + padding;
+  const maxX = vp.left + vp.width - btnRect.width - padding;
+  const maxY = vp.top + vp.height - btnRect.height - padding;
+
+  const fr = getCardRectExpanded(18);
+
+  const raw = [
+    // top row around the card
+    { x: fr.left, y: fr.top - btnRect.height - 22 },
+    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: fr.top - btnRect.height - 22 },
+    { x: fr.right - btnRect.width, y: fr.top - btnRect.height - 22 },
+
+    // sides
+    { x: fr.left - btnRect.width - 22, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
+    { x: fr.right + 22, y: (fr.top + fr.bottom) / 2 - btnRect.height / 2 },
+
+    // bottom row around the card
+    { x: fr.left, y: fr.bottom + 22 },
+    { x: (fr.left + fr.right) / 2 - btnRect.width / 2, y: fr.bottom + 22 },
+    { x: fr.right - btnRect.width, y: fr.bottom + 22 },
+  ];
+
+  // Clamp + remove forbidden ones
+  const anchors = raw
+    .map(p => ({
+      x: clamp(p.x, minX, maxX),
+      y: clamp(p.y, minY, maxY),
+    }))
+    .filter(p => !isForbidden(p.x, p.y, btnRect));
+
+  // Fallback: if everything is forbidden (tiny screen), allow viewport corners
+  if (!anchors.length) {
+    return [
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+      { x: minX, y: maxY },
+      { x: maxX, y: maxY },
+    ];
+  }
+
+  return anchors;
+}
+
 function getViewport() {
   const vv = window.visualViewport;
   if (vv) {
@@ -92,6 +152,21 @@ function releaseNoButton() {
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
+
+function teleportButtonReachable(btn) {
+  const rect = btn.getBoundingClientRect();
+  const anchors = getReachableAnchors(rect);
+
+  // Cycle deterministically so the user can keep finding it
+  const idx = (dodges - 1) % anchors.length;
+  const { x, y } = anchors[idx];
+
+  btn.style.position = "fixed";
+  btn.style.left = `${x}px`;
+  btn.style.top = `${y}px`;
+  btn.style.zIndex = btn.style.zIndex || "9999";
+}
+
 
 function placeButton(btn, x, y) {
   const rect = btn.getBoundingClientRect();
@@ -187,7 +262,6 @@ function activateSwarm() {
   swarmActive = true;
 
   subtitle.textContent = "Oh you like NO? Here's MORE NO. 😈";
-  spawnHearts(20);
 
   const count = 6;
   for (let i = 0; i < count; i++) {
@@ -262,12 +336,19 @@ function dodgeButton(btn, pointerX, pointerY, isClone) {
   // Teleport sometimes when trolling peaks
   const teleportChance = dodgeLevel >= 5 ? 0.55 : 0.15;
 
-  if (Math.random() < teleportChance) {
-    teleportButton(btn);
-    btn.style.transform = "scale(0.98) rotate(-2deg)";
-    setTimeout(() => (btn.style.transform = ""), 140);
+  const isRealNo = !isClone && btn === noBtn;
+
+// For the first 5 dodges, keep the real "No" reachable (predictable anchors)
+  if (isRealNo && dodges < 5) {
+    teleportButtonReachable(btn);
   } else {
-    placeButton(btn, pointerX + dx, pointerY + dy);
+    if (Math.random() < teleportChance) {
+      teleportButton(btn);
+      btn.style.transform = "scale(0.98) rotate(-2deg)";
+      setTimeout(() => (btn.style.transform = ""), 140);
+    } else {
+      placeButton(btn, pointerX + dx, pointerY + dy);
+    }
   }
 
   // Make the real No smaller as you keep trying
